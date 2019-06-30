@@ -1,0 +1,28 @@
+.card-wrapper {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ccc;
+    background: #fff;
+    min-height: 85px;
+    color: #6d7178;
+    h4 {
+        color: #383f47;
+    }
+}
+
+.active {
+    background: #fffedb;
+}
+
+.address {
+    font-size: 12px;
+}
+
+.title-text{
+    font-size: 14px;
+}
+
+.highlight {
+    color: #5392ef;
+    font-weight: bold;
+}

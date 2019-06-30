@@ -1,0 +1,32 @@
+.App {
+  text-align: center;
+}
+
+header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+h1, h2, h3, h4, h5, h6, p, ul {
+  margin: 0
+}
+
+.italic {
+  font-style: italic;
+}
+
+$spaceamounts: (5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100); // Adjust this to include the pixel amounts you need.
+$sides: (top, bottom, left, right); // Leave this variable alone
+
+@each $space in $spaceamounts {
+  @each $side in $sides {
+    .m-#{str-slice($side, 0, 1)}-#{$space} {
+      margin-#{$side}: #{$space}px !important;
+    }
+  
+    .p-#{str-slice($side, 0, 1)}-#{$space} {
+      padding-#{$side}: #{$space}px !important;
+    }
+  }
+}
