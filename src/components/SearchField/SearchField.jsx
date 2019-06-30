@@ -78,62 +78,65 @@ export class SearchField extends React.Component {
         showSuggestions: false
     }
 
-    inputRef = null
+    inputRef = null;
+    parentNode = null;
 
-    debounce(fn, timeout) {
-        let timer;
-        return function() {
-            clearTimeout(timer);
-            let context = this;
-            let args = Array.from(arguments);
-            const val = args[0].target.value.trim();
-            timer = setTimeout(() => {
-                fn.call(context, val);
-            }, timeout);
+    componentWillMount = () => {
+        document.addEventListener('click', this.handleDocumentClick, false);
+    }
+
+    componentWillUnmount = () => {
+        document.removeEventListener('click', this.handleDocumentClick, false);
+    }
+
+    handleDocumentClick = (e) => {
+        if (this.parentNode.contains(e.target)) {
+            return;
         }
-    };
+
+        this.setState({
+            inputState: 'blur',
+            showSuggestions: false
+        })
+    }
 
     getData = (str) => {
-        this.setState({
-            searchText: str
-        }, () => {
-            if (!str) {
-                this.setState({
-                    searchResults: []
-                })
-                return;
-            }
-            const results = data.filter(e => {
-                const matches = [];
-                for(let i in e) {
-                    if (typeof e[i] == 'object' && e[i].constructor === Array) {
-                        const found = e[i].filter(v => v.toLocaleLowerCase().includes(str.toLocaleLowerCase())).length;
-                        if(found) matches.push(e[i]);
-                    }
-                    if (typeof e[i] == 'string') {
-                        if(e[i].toLocaleLowerCase().includes(str.toLocaleLowerCase())) matches.push(e[i]);
-                    }
-                }
-                return (matches.length);
-            })
+        if (!str) {
             this.setState({
-                searchResults: results
-            });
+                searchResults: []
+            })
+            return;
+        }
+        const results = data.filter(e => {
+            const matches = [];
+            for(let i in e) {
+                if (typeof e[i] == 'object' && e[i].constructor === Array) {
+                    const found = e[i].filter(v => v.toLocaleLowerCase().includes(str.toLocaleLowerCase())).length;
+                    if(found) matches.push(e[i]);
+                }
+                if (typeof e[i] == 'string') {
+                    if(e[i].toLocaleLowerCase().includes(str.toLocaleLowerCase())) matches.push(e[i]);
+                }
+            }
+            return (matches.length);
+        })
+        this.setState({
+            searchResults: results
         });
     }
 
-    handleInputChange = this.debounce(this.getData, 500);
+    handleInputChange = (e) => {
+        const val = e.target.value;
+        this.setState({
+            searchText: val,
+            showSuggestions: val.trim() ? true : false 
+        });
+        this.getData(e.target.value.trim());
+    }
 
     setFocus = () => {
         this.setState({
             inputState: 'focus'
-        })
-    }
-
-    setOnBlur = () => {
-        this.setState({
-            inputState: 'blur',
-            showSuggestions: false
         })
     }
 
@@ -147,10 +150,9 @@ export class SearchField extends React.Component {
 
     onKeyDown = (e) => {
         const active = document.activeElement.parentNode.parentNode.lastChild;
+        const activeIndex = document.activeElement.tabIndex;
         const { activeSuggestion, searchResults } = this.state;
-        if (active.tagName !== 'UL') return;
         if (e.keyCode === 13) {
-            e.preventDefault();
             this.setState({
                 activeSuggestion: 0,
                 showSuggestions: false,
@@ -159,79 +161,77 @@ export class SearchField extends React.Component {
         }
         // User pressed the down arrow
         if(e.keyCode === 40) {
-            if (activeSuggestion === searchResults.length) {
+            active.childNodes[activeIndex +1] && active.childNodes[activeIndex+1].focus();
+            if (activeIndex + 1 !== searchResults.length) {
                 this.setState({
-                    activeSuggestion: 0
-                })
-            } else {
-                this.setState({
-                    activeSuggestion: activeSuggestion+1
+                    activeSuggestion: activeIndex + 2
                 })
             }
-            // active.childNodes[activeSuggestion].focus();
         }
         // User pressed the up arrow
         if (e.keyCode === 38) {
-            if (activeSuggestion === 0) {
+            active.childNodes[activeIndex-1] && active.childNodes[activeIndex-1].focus();    
+            if (activeIndex !== 0) {
                 this.setState({
-                    activeSuggestion: searchResults.length-1
-                })
-            } else {
-                this.setState({
-                    activeSuggestion: activeSuggestion-1
+                    activeSuggestion: activeIndex
                 })
             }
-        }
-    }
-
-    handleKeyPress = (e) => {
-        if(e.target.value.trim()){
-            this.setState({
-                showSuggestions: true
-            })
         }
     }
 
     handleMouseFocus = (index) => {
+        const active = document.activeElement.parentNode.parentNode.lastChild;
+        active.childNodes[index] && active.childNodes[index].focus();
         this.setState({
-            activeSuggestion: index
+            activeSuggestion: document.activeElement.tabIndex + 1
         })
     }
 
     clearInputText = () => {
         this.setState({
             activeSuggestion: 0,
-            searchText: ''
+            searchText: '',
+            inputState: 'blur'
         })
+    }
+
+
+
+    handleInputClick = (e) => {
+        this.setState({
+            inputState: 'focus',
+            showSuggestions: true
+        })
+        this.getData(e.target.value);
     }
 
     render = () => {
         const { searchResults, inputState, searchText, activeSuggestion, showSuggestions } = this.state;
         const { placeholder } = this.props;
-        return (<div tabIndex="0" onBlur={this.setOnBlur} className={`search-wrapper ${inputState}`}>
+        return (<div tabIndex="0" ref={(r) => this.parentNode = r} className={`search-wrapper ${inputState}`}>
             <form>
                 <i className="zmdi zmdi-search"></i>
                 <input 
-                    className="ellipsis"
+                    className={`ellipsis ${inputState}`}
                     type="text" 
                     ref= {(r) => this.inputRef = r}
-                    // value={searchText}
+                    value={searchText}
                     onChange={this.handleInputChange}
                     placeholder={placeholder}
                     onFocus={this.setFocus}
                     onKeyDown={this.onKeyDown}
-                    onKeyPress={this.handleKeyPress}
-                    onClick={this.handleKeyPress}
+                    onClick={this.handleInputClick}
                 />
                 <button onClick={this.clearInputText} className={`close-icon zmdi ${!searchText && 'hidden'}`} type="reset"></button>
             </form>
             { 
                 showSuggestions && searchText && <Suggestions 
-                    activeSuggestion={activeSuggestion} 
+                    activeSuggestion={activeSuggestion - 1} 
                     handleMouseFocus={this.handleMouseFocus}
                     onSelectItem={this.onSelectItem}
                     query={searchText}
                     results={searchResults}
+                    handleKeyDown={this.onKeyDown}
                 />
             }
         </div>

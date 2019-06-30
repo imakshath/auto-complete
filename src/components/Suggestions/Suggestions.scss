@@ -4,4 +4,7 @@
     max-height: 300px;
     overflow-y: auto;
     overflow-x: hidden;
+    li:focus {
+        outline: 0;
+    }
 }

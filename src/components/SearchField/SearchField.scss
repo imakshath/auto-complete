@@ -6,7 +6,7 @@ input {
     font-size: 16px;
     padding: 10px 0;
     display: inline-block;
-    &:focus {
+    &.focus {
         outline: 0;
         background: #fff;
     }
